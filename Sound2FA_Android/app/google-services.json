@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "133732462542",
+    "firebase_url": "https://sound2fa-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "sound2fa",
+    "storage_bucket": "sound2fa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:133732462542:android:64351def66b13fcfa7859f",
+        "android_client_info": {
+          "package_name": "com.example.sound2fa_android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0-pFWCxMMeJiE6rqVNrpWntE6X5h7B9g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

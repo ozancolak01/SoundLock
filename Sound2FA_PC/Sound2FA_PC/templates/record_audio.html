@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticating</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #E15C31;
+            margin-bottom: 20px;
+            font-size: 3em;
+        }
+
+        h2 {
+            text-align: center;
+            color: #E15C31;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        h3 {
+            position: fixed;
+            bottom: 10px;
+            text-align: center;
+            color: #E15C31;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h1>Authenticating...</h1>
+        <h2 id="randomText">Make some noise!</h2>
+    </div>
+    <h3>The app should be open while authenticating</h3>
+
+    <script>
+        var recorder;
+        var audio = new Audio();
+
+        $(document).ready(function () {
+            var contentDiv = $("#content");
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    var input = audioContext.createMediaStreamSource(stream);
+                    recorder = new Recorder(input, { numChannels: 1, sampleRate: 48000, bitrate: 96000, type: 'audio/wav' });
+
+
+                    var endRecordingTime = Date.now();  // Record the end time in milliseconds
+                    var startRecordingTime = parseFloat('{{time}}');
+                    var elapsedRecordingTime = (endRecordingTime - startRecordingTime) / 1000;  // Convert to seconds
+                    if(elapsedRecordingTime >= 0.9){
+                        console.error("Error: Recording time exceeds 0.9 seconds.");
+                        var errorMessage = encodeURIComponent("Your internet connection is not stable enough.");
+                        window.location.href = '/?error=' + errorMessage;
+                    }
+                    console.log("Time: " + elapsedRecordingTime);
+
+                    console.log("Recording audio..");
+                    recorder.record();
+                    setTimeout(function() {
+                        stopRecording();
+                        contentDiv.find("h2").fadeOut();
+                    }, 5000); // Stop recording after 5 seconds
+
+                    // Stop recording function
+                    function stopRecording() {
+                        recorder.stop();
+                        console.log("Stopped audio..");
+                        recorder.exportWAV(function (blob) {
+                            audio.src = URL.createObjectURL(blob);
+                            // audio.play();
+                            // Send the blob to the server (Flask) using AJAX
+                            console.log("Uploading audio..");
+                            uploadAudio(blob);
+                        });
+                    }
+                })
+                .catch(function (err) {
+                    console.log('The following error occurred: ' + err);
+                });
+
+            // Function to send the audio blob to the server
+            function uploadAudio(blob) {
+                var formData = new FormData();
+                formData.append('audio', blob);
+                formData.append('username', '{{ username }}'); // Pass the username to the server
+                formData.append('unique_key', '{{ unique_key }}');
+                formData.append('tokens', '{{ tokens }}');
+                console.log("Before ajax..");
+                $.ajax({
+                    type: 'POST',
+                    url: '/upload_audio',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        console.log('Audio uploaded successfully');
+                        if (response.message === 'Audio uploaded successfully') {
+                            // Redirect to the dashboard after audio is uploaded
+                            if (response.auth)
+                                window.location.href = '/dashboard';
+                            else if(response.quiet)
+                                window.location.href = '/denied?quiet=true';
+                            else
+                                window.location.href = '/denied';
+                        }
+                        else {
+                            console.log('Error uploading audio: ' + response.message);
+                            var errorMessage = encodeURIComponent("Could not reach the phone, make sure that SoundLock is open.");
+                            window.location.href = '/?error=' + errorMessage;
+                        }
+
+                    },
+                    error: function (error) {
+                        console.log('Error uploading audio: ' + error);
+                        var errorMessage = encodeURIComponent("Could not reach the phone, make sure that SoundLock is open.");
+                        window.location.href = '/?error=' + errorMessage;
+                    }
+                });
+            }
+        });
+
+        var textOptions = [
+            "Make some noise!",
+            "Sing us a song!",
+            "Speak up. Right now!",
+            "Say 'cheese' loudly!",
+            "Yell 'Hello, world!'",
+            "Break the silence!",
+            "Whisper a secret!",
+            "Say the first word that comes to mind!",
+            "How are you today?",
+            "Tell us about your day.",
+            "Any news today?",
+            "Shout 'This is the best app!'",
+            "Give us your best fake laugh!",
+            "Did you know that you should make some sounds?",
+            "Whisper, if you are in a library..",
+            "Say 'Open sesame!' and wait.."
+        ];
+
+        function getRandomText() {
+            var randomIndex = Math.floor(Math.random() * textOptions.length);
+            return textOptions[randomIndex];
+        }
+
+        // Update the text in h2 with a random text
+        $("#randomText").text(getRandomText());
+    </script>
+</body>
+</html>
