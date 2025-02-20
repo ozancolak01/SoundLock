@@ -59,7 +59,7 @@ def upload_audio():
     tokens = eval(unescape(request.form["tokens"]))
 
     path_pc = f'soundFiles/{request.form["username"]}_audioPC_{key}.wav'
-    # Save the audio file to a specific location (you may want to handle this better)
+    # Save the audio file to a specific location
     audio_file.save(path_pc)
 
     # Get the file named '{key}_audioAPP.aac' from firebase storage
